@@ -1,0 +1,43 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+import signal
+import sys
+
+class ASCIIException(Exception):
+    def __init__(self, message):
+        super(ASCIIException, self).__init__(message)
+
+def asciitxt(values):
+    try:
+        if isinstance(values, list):
+            values = [value.decode('ascii') for value in values]
+        elif isinstance(values, basestring):
+            values = values.decode('ascii')
+    except UnicodeDecodeError:
+        raise ASCIIException(
+            "LITP CLI arguments must be of type ascii.")
+    return values
+
+def handler(signum, frame):
+    sys.exit(0)
+
+signal.signal(signal.SIGINT, handler)
+signal.signal(signal.SIGHUP, handler)
+signal.signal(signal.SIGTERM, handler)
+signal.signal(signal.SIGPIPE, handler)
+
+if __name__ == "__main__":
+    try:
+        asciitxt(sys.argv[1:])
+    except ASCIIException as e:
+        sys.stderr.write("\n" + str(e) + "\n")
+        sys.exit(1)
+    except Exception as e:
+        sys.stderr.write("\n".join(sys.argv[1:]) + "\n")
+        sys.exit(1)
+    try:
+        from litpcli.litp import LitpCli
+        sys.exit(LitpCli().run_command(sys.argv[1:]))
+    except Exception as e:
+        sys.stderr.write(str(e) + "\n")
+        sys.exit(1)
